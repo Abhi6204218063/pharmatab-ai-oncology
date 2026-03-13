@@ -35,23 +35,25 @@ class MutationDetector:
 
     def detect_mutations(self, df):
 
-        """
-        Extract mutated genes from dataset
-        """
+        possible_columns = [
+        "gene",
+        "Gene",
+        "Hugo_Symbol",
+        "GENE",
+        "symbol"
+        ]
 
-        if "gene" in df.columns:
+        gene_column = None
 
-            genes = df["gene"].dropna().unique().tolist()
+        for col in possible_columns:
+            if col in df.columns:
+             gene_column = col
+            break
 
-        elif "Hugo_Symbol" in df.columns:
+        if gene_column is None:
+         raise ValueError("Dataset must contain a gene column")
 
-            genes = df["Hugo_Symbol"].dropna().unique().tolist()
-
-        else:
-
-            raise ValueError(
-                "Dataset must contain 'gene' or 'Hugo_Symbol' column"
-            )
+        genes = df[gene_column].dropna().unique().tolist()
 
         return genes
 
