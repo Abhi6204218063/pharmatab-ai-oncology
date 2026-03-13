@@ -38,8 +38,8 @@ class MutationDetector:
         possible_columns = [
         "gene",
         "Gene",
-        "Hugo_Symbol",
         "GENE",
+        "Hugo_Symbol",
         "symbol"
         ]
 
@@ -51,7 +51,9 @@ class MutationDetector:
             break
 
         if gene_column is None:
-         raise ValueError("Dataset must contain a gene column")
+         raise ValueError(
+            f"Dataset must contain one of these columns: {possible_columns}"
+         )
 
         genes = df[gene_column].dropna().unique().tolist()
 

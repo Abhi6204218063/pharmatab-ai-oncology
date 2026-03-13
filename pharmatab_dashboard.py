@@ -59,17 +59,27 @@ elif menu == "Upload Patient Data":
 
     st.header("Upload Mutation Dataset")
 
-    uploaded = st.file_uploader("Upload CSV/TSV mutation file")
+    uploaded_file = st.file_uploader(
+    "Upload mutation dataset (CSV or TSV)",
+    type=["csv", "tsv"]
+    )
 
-    if uploaded is not None:
+    if uploaded_file is not None:
 
-        df = pd.read_csv(uploaded)
+     if uploaded_file.name.endswith(".tsv"):
+        df = pd.read_csv(uploaded_file, sep="\t")
+    else:
+        df = pd.read_csv(uploaded_file)
 
-        st.session_state["patient_data"] = df
+    st.write("Preview of dataset")
+    st.dataframe(df.head())
 
-        st.success("Dataset loaded")
+    detector = MutationDetector()
 
-        st.dataframe(df)
+    genes = detector.detect_mutations(df)
+
+    st.success("Detected mutations:")
+    st.write(genes)
 
 
 # ---------- MUTATION ANALYSIS ----------
