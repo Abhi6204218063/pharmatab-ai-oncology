@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import io
 import matplotlib.pyplot as plt
 
 from ai.mutation_detector import MutationDetector
@@ -66,10 +67,13 @@ elif menu == "Upload Patient Data":
 
     if uploaded_file is not None:
 
-     if uploaded_file.name.endswith(".tsv"):
-        df = pd.read_csv(uploaded_file, sep="\t")
-    else:
-        df = pd.read_csv(uploaded_file)
+        file_bytes = uploaded_file.read()
+
+    try:
+        df = pd.read_csv(io.BytesI0(file_bytes),
+        sep="\t")
+    except:
+        df = pd.read_csv(io.BytesI0(file_bytes))
 
     st.write("Preview of dataset")
     st.dataframe(df.head())
