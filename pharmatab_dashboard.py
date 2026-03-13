@@ -67,9 +67,9 @@ elif menu == "Upload Patient Data":
 
     if uploaded_file is not None:
 
-        if uploaded_file.name.endswith(".tsv"):
-            df = pd.read_csv(uploaded_file, sep="\t")
-    else:
+        try:
+            df = pd.read_csv(uploaded_file, sep=None, engine="python")
+        except:
             df = pd.read_csv(uploaded_file)
 
     st.write("Preview of dataset")
