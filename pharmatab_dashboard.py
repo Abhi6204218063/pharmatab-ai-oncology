@@ -72,15 +72,15 @@ elif menu == "Upload Patient Data":
         else:
             df = pd.read_csv(uploaded_file)
 
-    st.write("Preview of dataset")
-    st.dataframe(df.head())
+            st.write("Preview of dataset")
+            st.dataframe(df.head())
 
-    detector = MutationDetector()
+            detector = MutationDetector()
 
-    genes = detector.detect_mutations(df)
+            genes = detector.detect_mutations(df)
 
-    st.success("Detected mutations:")
-    st.write(genes)
+            st.success("Detected mutations:")
+            st.write(genes)
 
 
 # ---------- MUTATION ANALYSIS ----------
