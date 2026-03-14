@@ -88,7 +88,7 @@ menu = st.sidebar.radio(
 "Therapy Recommendation",
 "Survival Prediction",
 "Clinical Trials",
-"Survival Analysis"
+"Survival Analysis",
 "Clinical Report"
 ]
 )
@@ -160,7 +160,10 @@ if menu == "Load Public Dataset":
 
             try:
 
-                df = pd.read_csv(uploaded_file)
+                df = pd.read_csv(uploaded_file, sep="\t")
+
+                if "Hugo_Symbol" in df.columns:
+                    df["geneSymbol"] = df["Hugo_Symbol"]  
 
                 st.session_state.dataset = df
 
@@ -235,32 +238,31 @@ if menu=="Upload Patient Data":
 
     st.header("Upload Mutation Dataset")
 
-    uploaded_file=st.file_uploader(
-    "Upload CSV / TSV / TXT mutation dataset",
+    uploaded_file = st.file_uploader(
+    "Upload mutation dataset",
     type=["csv","tsv","txt"]
-    )
+)
 
-    if uploaded_file:
+if uploaded_file is not None:
 
-        try:
+    try:
 
-            if uploaded_file.name.endswith(".tsv"):
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
 
-                df=pd.read_csv(uploaded_file,sep="\t")
+        else:
+            df = pd.read_csv(uploaded_file, sep="\t")
 
-            else:
+        st.session_state.dataset = df
 
-                df=pd.read_csv(uploaded_file)
+        st.success("Dataset loaded successfully")
 
-            st.session_state.dataset=df
+        st.write(df.head())
 
-            st.success("Dataset Loaded")
+    except Exception as e:
 
-            st.dataframe(df.head())
-
-        except:
-
-            st.error("Dataset loading failed")
+        st.error("Dataset loading failed")
+        st.write(e)
 
 
     if menu == "Mutation Explorer":
