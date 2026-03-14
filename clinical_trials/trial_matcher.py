@@ -2,10 +2,11 @@ import requests
 import pandas as pd
 
 
-class ClinicalTrialsAPI:
+class TrialMatcher:
 
     def __init__(self):
         self.base_url = "https://clinicaltrials.gov/api/v2/studies"
+
 
     def search_trials(self, condition):
 
@@ -69,6 +70,6 @@ class ClinicalTrialsAPI:
 
         except Exception as e:
 
-            print("Clinical Trial API Error:", e)
+            print("Clinical trial API error:", e)
 
             return pd.DataFrame()

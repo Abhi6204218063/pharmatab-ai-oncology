@@ -393,9 +393,9 @@ if menu == "Clinical Trials":
 
     if st.button("Search Trials"):
 
-        api = ClinicalTrialsAPI()
+        matcher = TrialMatcher()
 
-        trials = api.search_trials(condition)
+        trials = matcher.search_trials(condition)
 
         if trials.empty:
 
