@@ -1,97 +1,144 @@
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Image
 from reportlab.lib.styles import getSampleStyleSheet
-import os
+import io
+import pandas as pd
 
 
 class PDFExporter:
 
-    def export(self, report_text):
+    def generate_report(self, mutations, therapy_plan,
+                        tumor_plot=None, survival_plot=None):
+
+        buffer = io.BytesIO()
+
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
 
         styles = getSampleStyleSheet()
 
-        story = []
+        elements = []
 
-        # report text
+        # -----------------------------
+        # Title
+        # -----------------------------
 
-        for line in report_text.split("\n"):
+        elements.append(
+            Paragraph(
+                "PharmaTab Precision Oncology Report",
+                styles["Title"]
+            )
+        )
 
-            story.append(Paragraph(line, styles["Normal"]))
+        elements.append(Spacer(1, 20))
 
-            story.append(Spacer(1,6))
+        # -----------------------------
+        # Mutation Summary
+        # -----------------------------
 
+        elements.append(
+            Paragraph(
+                "Detected Tumor Mutations",
+                styles["Heading2"]
+            )
+        )
 
-        # ---------- Tumor Evolution ----------
+        if isinstance(mutations, pd.DataFrame):
 
-        try:
+            table_data = [list(mutations.columns)]
 
-            if os.path.exists("tumor_simulation.png"):
+            table_data += mutations.head(10).values.tolist()
 
-                story.append(Spacer(1,20))
+            table = Table(table_data)
 
-                story.append(Paragraph("Tumor Evolution Simulation", styles["Heading2"]))
+            elements.append(table)
 
-                story.append(Spacer(1,10))
+        elements.append(Spacer(1, 20))
 
-                story.append(Image("tumor_simulation.png", width=450, height=280))
+        # -----------------------------
+        # Therapy Recommendation
+        # -----------------------------
 
-        except:
-            pass
+        elements.append(
+            Paragraph(
+                "Recommended Therapy Strategy",
+                styles["Heading2"]
+            )
+        )
 
+        elements.append(
+            Paragraph(
+                str(therapy_plan),
+                styles["Normal"]
+            )
+        )
 
-        # ---------- Resistance Evolution ----------
+        elements.append(Spacer(1, 20))
 
-        try:
+        # -----------------------------
+        # Tumor Simulation Plot
+        # -----------------------------
 
-            if os.path.exists("tumor_resistance.png"):
+        if tumor_plot:
 
-                story.append(Spacer(1,20))
+            elements.append(
+                Paragraph(
+                    "Tumor Evolution Simulation",
+                    styles["Heading2"]
+                )
+            )
 
-                story.append(Paragraph("Tumor Resistance Evolution", styles["Heading2"]))
+            elements.append(
+                Image(tumor_plot, width=400, height=250)
+            )
 
-                story.append(Spacer(1,10))
+            elements.append(Spacer(1, 20))
 
-                story.append(Image("tumor_resistance.png", width=450, height=280))
+        # -----------------------------
+        # Survival Curve
+        # -----------------------------
 
-        except:
-            pass
+        if survival_plot:
 
+            elements.append(
+                Paragraph(
+                    "Kaplan-Meier Survival Analysis",
+                    styles["Heading2"]
+                )
+            )
 
-        # ---------- Virtual Cohort ----------
+            elements.append(
+                Image(survival_plot, width=400, height=250)
+            )
 
-        try:
+            elements.append(Spacer(1, 20))
 
-            if os.path.exists("cohort_simulation.png"):
+        # -----------------------------
+        # Clinical Notes
+        # -----------------------------
 
-                story.append(Spacer(1,20))
+        elements.append(
+            Paragraph(
+                "Clinical Interpretation",
+                styles["Heading2"]
+            )
+        )
 
-                story.append(Paragraph("Virtual Patient Cohort Simulation", styles["Heading2"]))
+        elements.append(
+            Paragraph(
+                """
+The recommended therapy strategy is derived from
+genomic mutation analysis and therapy optimization models.
 
-                story.append(Spacer(1,10))
+These predictions are intended for computational research
+purposes and should be clinically validated before
+medical decision making.
+                """,
+                styles["Normal"]
+            )
+        )
 
-                story.append(Image("cohort_simulation.png", width=450, height=280))
+        doc.build(elements)
 
-        except:
-            pass
+        buffer.seek(0)
 
-
-        # ---------- Survival Curve ----------
-
-        try:
-
-            if os.path.exists("survival_curve.png"):
-
-                story.append(Spacer(1,20))
-
-                story.append(Paragraph("Kaplan-Meier Survival Prediction", styles["Heading2"]))
-
-                story.append(Spacer(1,10))
-
-                story.append(Image("survival_curve.png", width=450, height=280))
-
-        except:
-            pass
-
-
-        pdf = SimpleDocTemplate("treatment_plan.pdf")
-
-        pdf.build(story)
+        return buffer
