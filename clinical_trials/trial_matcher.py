@@ -2,34 +2,73 @@ import requests
 import pandas as pd
 
 
-class TrialMatcher:
+class ClinicalTrialsAPI:
 
-    def search_trials(self,gene):
+    def __init__(self):
+        self.base_url = "https://clinicaltrials.gov/api/v2/studies"
 
-        url="https://clinicaltrials.gov/api/query/study_fields"
+    def search_trials(self, condition):
 
-        params={
-        "expr":gene,
-        "fields":"NCTId,Condition,BriefTitle",
-        "min_rnk":1,
-        "max_rnk":10,
-        "fmt":"json"
+        params = {
+            "query.term": condition,
+            "pageSize": 20
         }
 
-        r=requests.get(url,params=params)
+        try:
 
-        data=r.json()
+            response = requests.get(self.base_url, params=params)
 
-        studies=data["StudyFieldsResponse"]["StudyFields"]
+            if response.status_code != 200:
+                return pd.DataFrame()
 
-        rows=[]
+            try:
+                data = response.json()
+            except:
+                return pd.DataFrame()
 
-        for s in studies:
+            studies = data.get("studies", [])
 
-            rows.append({
-            "Trial ID":s["NCTId"][0],
-            "Condition":",".join(s["Condition"]),
-            "Title":s["BriefTitle"][0]
-            })
+            trials = []
 
-        return pd.DataFrame(rows)
+            for study in studies:
+
+                try:
+
+                    protocol = study.get("protocolSection", {})
+
+                    identification = protocol.get("identificationModule", {})
+                    status = protocol.get("statusModule", {})
+                    conditions = protocol.get("conditionsModule", {})
+                    design = protocol.get("designModule", {})
+
+                    title = identification.get("briefTitle", "NA")
+
+                    nct = identification.get("nctId", "NA")
+
+                    trial_status = status.get("overallStatus", "NA")
+
+                    cond = conditions.get("conditions", ["NA"])
+
+                    phase = design.get("phases", ["NA"])
+
+                    trials.append({
+                        "NCT_ID": nct,
+                        "Title": title,
+                        "Condition": ", ".join(cond),
+                        "Phase": ", ".join(phase),
+                        "Status": trial_status,
+                        "Link": f"https://clinicaltrials.gov/study/{nct}"
+                    })
+
+                except:
+                    continue
+
+            df = pd.DataFrame(trials)
+
+            return df
+
+        except Exception as e:
+
+            print("Clinical Trial API Error:", e)
+
+            return pd.DataFrame()

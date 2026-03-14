@@ -147,11 +147,15 @@ if menu=="Load Public Dataset":
 
         df=api.get_mutations()
 
-        st.session_state.dataset=df
+        if df is None or df.empty:
+            st.error("No data returned from cBioPortal")
 
-        st.success("Dataset Loaded")
+        else:
+            st.session_state.dataset=df
 
-        st.dataframe(df.head())
+            st.success("Dataset Loaded")
+
+            st.dataframe(df.head())
 
 # --------------------------------------------------------
 # UPLOAD DATA
@@ -256,7 +260,7 @@ if menu=="Mutation Analysis":
 
         trials = matcher.search_trials(gene)
 
-        st.dataframe(trials)
+        st.dataframe(trials)       
 
 # --------------------------------------------------------
 # THERAPY RECOMMENDATION
@@ -381,36 +385,27 @@ if menu=="Survival Analysis":
 # CLINICAL TRIALS
 # --------------------------------------------------------
 
-if menu=="Clinical Trials":
+if menu == "Clinical Trials":
 
     st.header("Clinical Trials Search")
 
-    condition=st.text_input("Enter cancer type")
+    condition = st.text_input("Enter cancer type")
 
     if st.button("Search Trials"):
 
-        trials_api=ClinicalTrialsAPI()
+        api = ClinicalTrialsAPI()
 
-        trials=trials_api.search_trials(condition)
+        trials = api.search_trials(condition)
 
-        st.dataframe(trials)
+        if trials.empty:
 
-    if menu=="Survival Prediction":
+            st.warning("No trials found")
 
-        st.header("AI Survival Prediction")
+        else:
 
-    if "dataset" in st.session_state:
+            st.dataframe(trials)
 
-        df = st.session_state.dataset
-
-        predictor = SurvivalPredictor()
-
-        model = predictor.train_model(df)
-
-        st.success("Model trained on dataset")
-
-    else:
-        st.warning("Load dataset first")    
+            st.success(f"{len(trials)} trials found")   
 
 # --------------------------------------------------------
 # CLINICAL REPORT
@@ -418,27 +413,20 @@ if menu=="Clinical Trials":
 
 if menu=="Clinical Report":
 
-    if st.session_state.mutations is None:
+    st.header("Generate Clinical Report")
 
-        st.warning("Run analysis first")
+    if "dataset" in st.session_state:
 
-    else:
+        pdf = PDFExporter()
 
-        st.header("Generate Clinical Report")
-
-        pdf=PDFExporter()
-
-        report=pdf.generate_report(
-            st.session_state.mutations,
-            st.session_state.therapy,
-            tumor_plot=st.session_state.tumor_plot,
-            survival_plot=st.session_state.survival_plot
+        report = pdf.generate_report(
+            st.session_state.dataset
         )
 
         st.download_button(
-        "Download PDF Report",
-        report,
-        "pharmatab_report.pdf"
+            "Download Report",
+            report,
+            "pharmatab_report.pdf"
         )
 
 # --------------------------------------------------------
@@ -447,9 +435,9 @@ if menu=="Clinical Report":
 
 if menu=="About":
 
-    st.header("About PharmaTab")
+    st.title("About PharmaTab")
 
-    st.write("""
+    st.markdown("""
 PharmaTab is a computational precision oncology platform designed
 to simulate cancer treatment strategies using genomic mutation data.
 
