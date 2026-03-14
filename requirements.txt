@@ -9,3 +9,4 @@ reportlab
 lifelines
 requests
 seaborn
+networkx
