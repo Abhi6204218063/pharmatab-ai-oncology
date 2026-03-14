@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import requests
 
 from ai.mutation_detector import MutationDetector
 from ai.therapy_mapper import MutationTherapyMapper
@@ -21,6 +22,10 @@ from data_sources.clinical_trials_api import ClinicalTrialsAPI
 
 from explorer.gene_explorer import GeneExplorer
 from clinical_trials.trial_matcher import TrialMatcher
+from clinical.therapy_engine import TherapyEngine
+from analysis.survival_analysis import SurvivalAnalysis
+from analysis.gene_drug_network import GeneDrugNetwork
+from analysis.mutation_heatmap import MutationHeatmap
 
 from utils.pdf_exporter import PDFExporter
 
@@ -78,9 +83,12 @@ menu = st.sidebar.radio(
 "Load Public Dataset",
 "Upload Patient Data",
 "Mutation Explorer",
+"Mutation Heatmap",
+"Gene Drug Network",
 "Therapy Recommendation",
 "Survival Prediction",
 "Clinical Trials",
+"Survival Analysis"
 "Clinical Report"
 ]
 )
@@ -110,56 +118,114 @@ if menu=="Home":
     st.header("Precision Oncology Research Platform")
 
     st.markdown("""
-PharmaTab is an AI-driven oncology simulation platform designed to analyze
-cancer genomic mutations and model therapeutic responses.
+    # 🧬 PharmaTab AI Oncology Platform
 
-The platform integrates multiple computational modules including:
+    ### Computational Platform for Mutation-Driven Therapy Discovery
+    """)
 
-• Mutation detection  
-• Therapy mapping  
-• Therapy optimization  
-• Tumor evolution simulation  
-• Drug resistance modeling  
-• Virtual cohort simulation  
-• Survival outcome modeling  
+    st.markdown("""
+    PharmaTab integrates genomic mutation analysis, therapy mapping,
+    clinical trial discovery and survival modeling into a unified
+    precision oncology research platform.
+    """)
 
-These modules are connected through a unified pipeline to simulate
-personalized treatment strategies based on genomic data.
+# -------------------------------
+# DATASET LOADER
+# -------------------------------
 
-PharmaTab enables researchers to explore how genomic alterations influence
-therapy response and patient survival outcomes.
+if menu == "Load Public Dataset":
 
-The system supports integration with public cancer datasets such as
-TCGA and cBioPortal and can simulate therapy responses under different
-treatment strategies.
+    st.header("Load Cancer Mutation Dataset")
 
-This platform is designed for computational oncology research and
-precision medicine modeling.
-""")
+    option = st.radio(
+        "Choose dataset source",
+        [
+            "Upload TCGA Dataset",
+            "Fetch From cBioPortal"
+        ]
+    )
 
-# --------------------------------------------------------
-# PUBLIC DATASET LOADER
-# --------------------------------------------------------
+    # --------------------------------
+    # OPTION 1: Upload TCGA dataset
+    # --------------------------------
 
-if menu=="Load Public Dataset":
+    if option == "Upload TCGA Dataset":
 
-    st.header("Load TCGA Mutation Dataset")
+        uploaded_file = st.file_uploader(
+            "Upload TCGA mutation dataset (CSV / TSV)",
+            type=["csv", "tsv"]
+        )
 
-    if st.button("Load Data From cBioPortal"):
+        if uploaded_file is not None:
 
-        api=CBioPortalAPI()
+            try:
 
-        df=api.get_mutations()
+                df = pd.read_csv(uploaded_file)
 
-        if df is None or df.empty:
-            st.error("No data returned from cBioPortal")
+                st.session_state.dataset = df
 
-        else:
-            st.session_state.dataset=df
+                st.success("Dataset uploaded successfully")
 
-            st.success("Dataset Loaded")
+                st.dataframe(df.head())
 
-            st.dataframe(df.head())
+            except:
+
+                st.error("Dataset format not supported")
+    
+
+    # --------------------------------
+    # OPTION 2: Fetch from cBioPortal
+    # --------------------------------
+
+    if option == "Fetch From cBioPortal":
+
+        if st.button("Load Data From cBioPortal"):
+
+            try:
+
+                url = "https://www.cbioportal.org/api/mutations"
+
+                params = {
+                    "molecularProfileId": "brca_tcga_mutations",
+                    "sampleListId": "brca_tcga_all",
+                    "projection": "DETAILED"
+                }
+
+                headers = {
+                    "Accept": "application/json"
+                }
+
+                response = requests.get(url, params=params, headers=headers)
+
+                if response.status_code != 200:
+
+                    st.error("cBioPortal API failed")
+
+                else:
+
+                    data = response.json()
+
+                    df = pd.DataFrame(data)
+
+                    if df.empty:
+
+                        st.error("No data returned from cBioPortal")
+
+                    else:
+
+                        st.session_state.dataset = df
+
+                        st.success("Dataset loaded from cBioPortal")
+
+                        st.dataframe(df.head())
+
+            except Exception as e:
+
+                st.error("Failed to fetch data")
+
+                st.info(
+                    "Mutation datasets can be uploaded directly or retrieved from cBioPortal."
+                )
 
 # --------------------------------------------------------
 # UPLOAD DATA
@@ -196,27 +262,34 @@ if menu=="Upload Patient Data":
 
             st.error("Dataset loading failed")
 
-    if menu=="Mutation Explorer":
+
+    if menu == "Mutation Explorer":
 
         st.header("Mutation Explorer")
 
-    if st.session_state.dataset is None:
+    df = st.session_state.get("dataset")
+
+    if df is None:
+
         st.warning("Load dataset first")
 
     else:
 
-        df=st.session_state.dataset
+        col1, col2 = st.columns(2)
 
-        gene_counts=df["geneSymbol"].value_counts().head(20)
+        with col1:
 
-        st.bar_chart(gene_counts)
+            st.subheader("Dataset Preview")
 
-        selected_gene=st.selectbox(
-            "Select gene",
-            gene_counts.index
-        )
+            st.dataframe(df.head())
 
-        st.session_state.selected_gene=selected_gene     
+        with col2:
+
+            st.subheader("Mutation Frequency")
+
+            gene_counts = df["geneSymbol"].value_counts().head(10)
+
+            st.bar_chart(gene_counts)  
 
 # --------------------------------------------------------
 # MUTATION ANALYSIS
@@ -271,37 +344,88 @@ if menu=="Mutation Analysis":
 
         trials = matcher.search_trials(gene)
 
-        st.dataframe(trials)       
+        st.dataframe(trials)  
 
-# --------------------------------------------------------
-# THERAPY RECOMMENDATION
-# --------------------------------------------------------
+# ----------------------------
+# MUTATION HEATMAP + GENE NETWORK
+# ----------------------------
 
-if menu=="Therapy Recommendation":
+if menu == "Mutation Heatmap":
 
-    st.header("Targeted Therapy Suggestions")
+    st.header("Genomic Mutation Analysis")
 
-    if "selected_gene" not in st.session_state:
+    df = st.session_state.get("dataset")
 
-        st.warning("Select gene in Mutation Explorer")
+    if df is None:
+
+        st.warning("Load dataset first")
 
     else:
 
-        gene=st.session_state.selected_gene
+        col1, col2 = st.columns(2)
 
-        therapy_map={
-            "BRCA1":"PARP inhibitors",
-            "BRCA2":"PARP inhibitors",
-            "EGFR":"EGFR inhibitors",
-            "KRAS":"MEK inhibitors",
-            "PIK3CA":"PI3K inhibitors",
-        }
+        with col1:
 
-        therapy=therapy_map.get(gene,"Standard chemotherapy")
+            st.subheader("Mutation Heatmap")
 
-        st.session_state.therapy=therapy
+            heat = MutationHeatmap()
 
-        st.success(f"Recommended therapy: {therapy}")
+            fig = heat.plot(df)
+
+            st.pyplot(fig)
+
+        with col2:
+
+            st.subheader("Gene–Drug Network")
+
+            network = GeneDrugNetwork()
+
+            fig2 = network.build()
+
+            st.pyplot(fig2)
+
+
+# -----------------------------
+# THERAPY RECOMMENDATION
+# -----------------------------
+
+if menu == "Therapy Recommendation":
+
+    st.header("AI Therapy Recommendation")
+
+    df = st.session_state.get("dataset")
+
+    if df is None:
+
+        st.warning("Load dataset first")
+
+    else:
+
+        engine = TherapyEngine()
+
+        therapy_df = engine.recommend(df)
+
+        if therapy_df is None:
+
+            st.info("No known therapy matches found")
+
+        else:
+
+            st.success("Therapy recommendations generated")
+
+            st.dataframe(therapy_df)
+
+            st.subheader("Clinical Interpretation")
+
+            for _, row in therapy_df.iterrows():
+
+                st.markdown(
+                    f"""
+                    **Gene:** {row['Gene']}  
+                    **Recommended Therapy:** {row['Recommended Therapy']}  
+                    **Mechanism:** {row['Therapy Type']}
+                    """
+                )
 
 # --------------------------------------------------------
 # TUMOR SIMULATION
@@ -384,6 +508,16 @@ if menu=="Survival Analysis":
         fig = cohort.simulate()
         st.pyplot(fig)
 
+if menu == "Survival Analysis":
+
+    st.header("Survival Analysis")
+
+    surv = SurvivalAnalysis()
+
+    fig = surv.simulate()
+
+    st.pyplot(fig)        
+
 # -------------------------------------------------------
 # SURVIVAL PREDICTION
 # -------------------------------------------------------
@@ -437,39 +571,35 @@ if menu=="Clinical Trials":
 # CLINICAL REPORT
 # --------------------------------------------------------
 
-if menu=="Clinical Report":
+if menu == "Clinical Report":
 
     st.header("Clinical Oncology Report")
 
-    if st.session_state.dataset is None:
+    df = st.session_state.get("dataset")
+
+    if df is None:
 
         st.warning("Load dataset first")
 
     else:
 
-        df=st.session_state.dataset
-
         st.subheader("Mutation Summary")
 
         st.dataframe(df.head())
 
-        if "selected_gene" in st.session_state:
+        st.subheader("Top Mutated Genes")
 
-            st.subheader("Selected Gene")
+        gene_counts = df["geneSymbol"].value_counts().head(10)
 
-            st.write(st.session_state.selected_gene)
+        st.bar_chart(gene_counts)
 
-        if st.session_state.therapy:
+        st.subheader("Clinical Interpretation")
 
-            st.subheader("Recommended Therapy")
-
-            st.write(st.session_state.therapy)
-
-        if st.session_state.trials is not None:
-
-            st.subheader("Relevant Clinical Trials")
-
-            st.dataframe(st.session_state.trials.head())
+        st.markdown("""
+        Detected mutations indicate potential activation of oncogenic pathways.
+        Targeted therapies and ongoing clinical trials should be evaluated
+        to determine optimal treatment strategies.
+        """)
 
 # --------------------------------------------------------
 # ABOUT
