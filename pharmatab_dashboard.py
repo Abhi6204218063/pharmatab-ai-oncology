@@ -238,8 +238,8 @@ if menu=="Upload Patient Data":
 
     st.header("Upload Mutation Dataset")
 
-    uploaded_file = st.file_uploader(
-    "Upload mutation dataset",
+uploaded_file = st.file_uploader(
+    "Upload CSV / TSV / TXT mutation dataset",
     type=["csv","tsv","txt"]
 )
 
@@ -253,15 +253,20 @@ if uploaded_file is not None:
         else:
             df = pd.read_csv(uploaded_file, sep="\t")
 
+        # TCGA column fix
+        if "Hugo_Symbol" in df.columns:
+            df["geneSymbol"] = df["Hugo_Symbol"]
+
         st.session_state.dataset = df
 
         st.success("Dataset loaded successfully")
 
-        st.write(df.head())
+        st.dataframe(df.head())
 
     except Exception as e:
 
         st.error("Dataset loading failed")
+
         st.write(e)
 
 
