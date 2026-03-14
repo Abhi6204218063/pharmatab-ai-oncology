@@ -25,3 +25,12 @@ class ClinicalTrialsAPI:
         df = pd.json_normalize(studies)
 
         return df
+    
+        st.markdown("""
+        Clinical trials allow patients to access experimental therapies that may not yet be widely available.
+
+        This tool searches the ClinicalTrials.gov database to identify trials related
+        to the specified cancer type.
+
+        Researchers can explore potential treatment strategies and emerging therapies.
+        """)
