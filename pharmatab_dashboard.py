@@ -521,6 +521,14 @@ if page == "Mutation Heatmap":
 
             st.pyplot(fig)
 
+            network_buffer = BytesIO()
+
+            fig.savefig(network_buffer, format="png")
+
+            network_buffer.seek(0)
+
+            st.session_state.network_plot = network_buffer
+
         with col2:
 
             st.subheader("Gene–Drug Network")
@@ -531,21 +539,15 @@ if page == "Mutation Heatmap":
 
             st.pyplot(fig2)
 
-    mutation_buffer = BytesIO()
+            network_buffer = BytesIO()
 
-    fig.savefig(mutation_buffer, format="png")
+            fig.savefig(network_buffer, format="png")
 
-    mutation_buffer.seek(0)
+            network_buffer.seek(0)
 
-    st.session_state.mutation_plot = mutation_buffer
+            st.session_state.network_plot = network_buffer
 
-    network_buffer = BytesIO()
-
-    fig.savefig(network_buffer, format="png")
-
-    network_buffer.seek(0)
-
-    st.session_state.network_plot = network_buffer        
+      
 
 
 # -----------------------------
@@ -653,19 +655,20 @@ if page=="Survival Analysis":
     else:
 
         st.header("Kaplan-Meier Survival Analysis")
-        import io
+        fig, ax = plt.subplots()
 
         km=KaplanMeierSurvival()
 
         km_fig=km.run_analysis(
-        st.session_state.dataset
+        st.session_state.dataset,
+        ax=ax
         )
         
         st. pyplot(km_fig)
 
         survival_buffer = BytesIO()
 
-        km_fig.savefig(survival_buffer, format="png")
+        km_fig.savefig(survival_buffer, format="png", bbox_inches="tight")
 
         survival_buffer.seek(0)
 
@@ -774,7 +777,7 @@ def generate_pdf_report():
         )
     )
 
-    elements.append(Spacer(1,20))
+    elements.append(Spacer(1,30))
 
     # Intro paragraph
     intro = """
@@ -799,8 +802,8 @@ def generate_pdf_report():
 
         img = Image(
             st.session_state.mutation_plot,
-            width=5*inch,
-            height=3*inch
+            width=6*inch,
+            height=4*inch
         )
 
         elements.append(img)
@@ -843,6 +846,14 @@ def generate_pdf_report():
 
         elements.append(img)
         elements.append(Spacer(1,20))
+
+        network_buffer = BytesIO()
+
+        fig.savefig(network_buffer, format="png")
+
+        network_buffer.seek(0)
+
+        st.session_state.network_plot = network_buffer
 
     # ----------------------------
     # Therapy Table
