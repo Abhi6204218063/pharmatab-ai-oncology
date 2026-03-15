@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import requests
+import networkx as nx
 from io import BytesIO
+
 
 from ai.mutation_detector import MutationDetector
 from ai.therapy_mapper import MutationTherapyMapper
@@ -34,6 +36,74 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 
 from utils.pdf_exporter import PDFExporter
+
+# -------------------------------------------------------
+# GENE DRUG PATHWAY
+# ------------------------------------------------------
+gene_network_data = {
+
+    "TP53": {
+        "drug": "APR-246",
+        "pathway": "p53 signaling"
+    },
+
+    "EGFR": {
+        "drug": "Gefitinib",
+        "pathway": "RTK/RAS/MAPK"
+    },
+
+    "KRAS": {
+        "drug": "Sotorasib",
+        "pathway": "RAS/MAPK"
+    },
+
+    "PIK3CA": {
+        "drug": "Alpelisib",
+        "pathway": "PI3K/AKT"
+    },
+
+    "BRCA1": {
+        "drug": "Olaparib",
+        "pathway": "DNA repair"
+    },
+
+    "BRCA2": {
+        "drug": "Olaparib",
+        "pathway": "DNA repair"
+    }
+
+}
+
+def build_gene_drug_network(mutations):
+
+        G = nx.Graph()
+
+        for gene in mutations:
+
+         if gene in gene_network_data:
+
+            drug = gene_network_data[gene]["drug"]
+            pathway = gene_network_data[gene]["pathway"]
+
+            G.add_node(gene, type="gene")
+            G.add_node(drug, type="drug")
+            G.add_node(pathway, type="pathway")
+
+            G.add_edge(gene, drug)
+            G.add_edge(gene, pathway)
+            
+            return G
+    
+        fig, ax = plt.subplots()
+        pos = nx.spring_layout(G)
+        nx.draw(
+            G,
+            pos,
+            with_labels=True,
+            node_color="lightblue",
+            node_size=2000
+        )       
+        st.pyplot(fig)
 
 # --------------------------------------------------------
 # Page config
@@ -175,7 +245,9 @@ if page == "Load Public Dataset":
                 df = pd.read_csv(uploaded_file, sep="\t")
 
                 if "Hugo_Symbol" in df.columns:
-                    df["geneSymbol"] = df["Hugo_Symbol"]  
+                    df["geneSymbol"] = df["Hugo_Symbol"]
+                    mutated_genes = df["geneSymbol"].unique()
+                    G = build_gene_drug_network(mutated_genes)  
 
                 st.session_state.dataset = df
 
@@ -268,6 +340,9 @@ if uploaded_file is not None:
         # TCGA column fix
         if "Hugo_Symbol" in df.columns:
             df["geneSymbol"] = df["Hugo_Symbol"]
+            mutated_genes = df["geneSymbol"].unique()
+
+            G = build_gene_drug_network(mutated_genes)
 
         st.session_state.dataset = df
 
@@ -308,7 +383,8 @@ if uploaded_file is not None:
 
             gene_counts = df["geneSymbol"].value_counts().head(10)
 
-            st.bar_chart(gene_counts)  
+            st.bar_chart(gene_counts) 
+
 
 # --------------------------------------------------------
 # MUTATION ANALYSIS
@@ -516,10 +592,13 @@ if page=="Survival Analysis":
         km_fig=km.run_analysis(
         st.session_state.dataset
         )
-        st.pyplot(km_fig)
-        survival_buffer = BytesIO()
-        km_fig.savefig(survival_buffer, format="png")
-        survival_buffer.seek(0)
+        
+        if km_fig is not None:
+
+            st.pyplot(km_fig)
+            survival_buffer = BytesIO()
+            km_fig.savefig(survival_buffer, format="png")
+            survival_buffer.seek(0)
 
         st.session_state.survival_plot = survival_buffer
 
@@ -671,6 +750,7 @@ supporting translational cancer research workflows.
 # -----------------------------------
 # PDF REPORT GENERATOR
 # -----------------------------------
+
 def generate_pdf_report():
 
     buffer = BytesIO()
@@ -680,10 +760,12 @@ def generate_pdf_report():
     elements = []
 
     # Title
-    elements.append(Paragraph(
-        "PharmaTab AI Oncology Analysis Report",
-        styles['Title']
-    ))
+    elements.append(
+        Paragraph(
+            "PharmaTab AI Oncology Analysis Report",
+            styles['Title']
+        )
+    )
 
     elements.append(Spacer(1,20))
 
@@ -698,43 +780,72 @@ def generate_pdf_report():
     elements.append(Paragraph(intro, styles['BodyText']))
     elements.append(Spacer(1,20))
 
-    # Mutation plot
+    # ----------------------------
+    # Mutation Plot
+    # ----------------------------
+
     if "mutation_plot" in st.session_state:
 
-        elements.append(Paragraph(
-            "Mutation Frequency Analysis",
-            styles['Heading2']
-        ))
+        elements.append(
+            Paragraph("Mutation Frequency Analysis", styles['Heading2'])
+        )
 
-        img = Image(st.session_state.mutation_plot,
-                    width=5*inch,
-                    height=3*inch)
+        img = Image(
+            st.session_state.mutation_plot,
+            width=5*inch,
+            height=3*inch
+        )
 
         elements.append(img)
         elements.append(Spacer(1,20))
 
-    # Survival plot
+    # ----------------------------
+    # Survival Plot
+    # ----------------------------
+
     if "survival_plot" in st.session_state:
 
-        elements.append(Paragraph(
-            "Survival Prediction Analysis",
-            styles['Heading2']
-        ))
+        elements.append(
+            Paragraph("Patient Survival Prediction", styles['Heading2'])
+        )
 
-        img = Image(st.session_state.survival_plot,
-                    width=5*inch,
-                    height=3*inch)
+        img = Image(
+            st.session_state.survival_plot,
+            width=5*inch,
+            height=3*inch
+        )
 
         elements.append(img)
         elements.append(Spacer(1,20))
 
-    # Therapy table
+    # ----------------------------
+    # Gene Drug Network
+    # ----------------------------
+
+    if "network_plot" in st.session_state:
+
+        elements.append(
+            Paragraph("Gene Drug Interaction Network", styles['Heading2'])
+        )
+
+        img = Image(
+            st.session_state.network_plot,
+            width=5*inch,
+            height=4*inch
+        )
+
+        elements.append(img)
+        elements.append(Spacer(1,20))
+
+    # ----------------------------
+    # Therapy Table
+    # ----------------------------
+
     if "therapy_table" in st.session_state:
 
-        elements.append(Paragraph(
-            "Therapy Recommendations",
-            styles['Heading2']
-        ))
+        elements.append(
+            Paragraph("Therapy Recommendations", styles['Heading2'])
+        )
 
         data = st.session_state.therapy_table
 
@@ -743,6 +854,10 @@ def generate_pdf_report():
         table = Table(table_data)
 
         elements.append(table)
+
+    # ----------------------------
+    # Build PDF
+    # ----------------------------
 
     doc = SimpleDocTemplate(buffer, pagesize=letter)
 
