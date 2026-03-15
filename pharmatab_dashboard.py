@@ -100,7 +100,8 @@ page = st.sidebar.radio(
         "Survival Prediction",
         "Clinical Trials",
         "Survival Analysis",
-        "Clinical Report"
+        "Clinical Report",
+        "Export Report"
     ]
 )
 
