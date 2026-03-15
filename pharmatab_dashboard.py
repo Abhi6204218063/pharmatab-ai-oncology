@@ -129,23 +129,21 @@ st.markdown("""
 <style>
 
 .stApp {
-background: radial-gradient(circle at 20% 20%, #0b132b, #1c2541, #3a506b);
-background-size: 400% 400%;
-animation: gradientMove 15s ease infinite;
-}
-
-@keyframes gradientMove {
-0% {background-position:0% 50%;}
-50% {background-position:100% 50%;}
-100% {background-position:0% 50%;}
+background-color: #f5f7fb;
 }
 
 h1,h2,h3{
-color:#1f2937;
+color:#111111;
 }
-            
-section[data-testid="stSidebar"] {
-            background-color: #ffffff;
+
+section[data-testid="stSidebar"]{
+background-color:#ffffff;
+}
+
+.block-container{
+background-color:#ffffff;
+padding:2rem;
+border-radius:10px;
 }
 
 </style>
@@ -532,6 +530,22 @@ if page == "Mutation Heatmap":
 
             st.pyplot(fig2)
 
+    mutation_buffer = BytesIO()
+
+    fig.savefig(mutation_buffer, format="png")
+
+    mutation_buffer.seek(0)
+
+    st.session_state.mutation_plot = mutation_buffer
+
+    network_buffer = BytesIO()
+
+    fig.savefig(network_buffer, format="png")
+
+    network_buffer.seek(0)
+
+    st.session_state.network_plot = network_buffer        
+
 
 # -----------------------------
 # THERAPY RECOMMENDATION
@@ -667,7 +681,15 @@ if page == "Survival Analysis":
 
     fig = surv.simulate()
 
-    st.pyplot(fig)        
+    st.pyplot(fig) 
+
+    survival_buffer = BytesIO()
+
+    km_fig.savefig(survival_buffer, format="png")
+
+    survival_buffer.seek(0)
+
+    st.session_state.survival_plot = survival_buffer       
 
 # -------------------------------------------------------
 # SURVIVAL PREDICTION
