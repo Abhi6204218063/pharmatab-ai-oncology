@@ -660,36 +660,15 @@ if page=="Survival Analysis":
         st.session_state.dataset
         )
         
-        if km_fig is not None:
+        st. pyplot(km_fig)
 
-            st.pyplot(km_fig)
-            survival_buffer = BytesIO()
-            km_fig.savefig(survival_buffer, format="png")
-            survival_buffer.seek(0)
+        survival_buffer = BytesIO()
 
-        st.session_state.survival_plot = survival_buffer
+        km_fig.savefig(survival_buffer, format="png")
 
-        cohort = CohortSurvival()
-        fig = cohort.simulate()
-        st.pyplot(fig)
+        survival_buffer.seek(0)
 
-if page == "Survival Analysis":
-
-    st.header("Survival Analysis")
-
-    surv = SurvivalAnalysis()
-
-    fig = surv.simulate()
-
-    st.pyplot(fig) 
-
-    survival_buffer = BytesIO()
-
-    km_fig.savefig(survival_buffer, format="png")
-
-    survival_buffer.seek(0)
-
-    st.session_state.survival_plot = survival_buffer       
+        st.session_state.survival_plot = survival_buffer       
 
 # -------------------------------------------------------
 # SURVIVAL PREDICTION
