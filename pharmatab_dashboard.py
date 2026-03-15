@@ -28,6 +28,11 @@ from analysis.survival_analysis import SurvivalAnalysis
 from analysis.gene_drug_network import GeneDrugNetwork
 from analysis.mutation_heatmap import MutationHeatmap
 
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+
 from utils.pdf_exporter import PDFExporter
 
 # --------------------------------------------------------
@@ -487,7 +492,7 @@ if page=="Tumor Simulation":
         cohort_results=cohort.run_simulation(
         st.session_state.therapy
         )
-
+        st.session_state.therapy_table = therapy_df
         st.dataframe(cohort_results.head())
 
 # --------------------------------------------------------
@@ -661,39 +666,109 @@ PharmaTab is designed for **research and hypothesis generation** in computationa
 supporting translational cancer research workflows.
 
 """)
-    
-if page=="Clinical Report":
 
-    st.header("Clinical Oncology Report")
+# -----------------------------------
+# PDF REPORT GENERATOR
+# -----------------------------------
+def generate_pdf_report():
 
-    st.markdown("""
-        Generate a structured report summarizing genomic findings and therapeutic insights.
-    """)
+    buffer = BytesIO()
 
-    if "dataset" not in st.session_state:
+    styles = getSampleStyleSheet()
 
-        st.warning("Load dataset first")
+    elements = []
 
-    else:
+    # Title
+    elements.append(Paragraph(
+        "PharmaTab AI Oncology Analysis Report",
+        styles['Title']
+    ))
 
-        df=st.session_state.dataset
+    elements.append(Spacer(1,20))
 
-        st.subheader("Mutation Summary")
+    # Intro paragraph
+    intro = """
+    PharmaTab AI Oncology Platform performs genomic mutation analysis,
+    therapy recommendation mapping, and survival prediction modeling.
+    This report summarizes the computational analysis performed on the
+    uploaded patient mutation dataset.
+    """
 
-        st.write(df.head())
+    elements.append(Paragraph(intro, styles['BodyText']))
+    elements.append(Spacer(1,20))
 
-        st.subheader("Mutation Frequency")
+    # Mutation plot
+    if "mutation_plot" in st.session_state:
 
-        gene_counts=df["geneSymbol"].value_counts().head(10)
+        elements.append(Paragraph(
+            "Mutation Frequency Analysis",
+            styles['Heading2']
+        ))
 
-        st.bar_chart(gene_counts)
+        img = Image(st.session_state.mutation_plot,
+                    width=5*inch,
+                    height=3*inch)
 
-        st.subheader("Therapy Recommendation")
+        elements.append(img)
+        elements.append(Spacer(1,20))
 
-        st.markdown("""
-        Based on detected mutations, targeted therapies and relevant clinical trials
-        can be explored for research purposes.
-        """)
+    # Survival plot
+    if "survival_plot" in st.session_state:
 
-        st.success("Report Ready for Export")    
-    
+        elements.append(Paragraph(
+            "Survival Prediction Analysis",
+            styles['Heading2']
+        ))
+
+        img = Image(st.session_state.survival_plot,
+                    width=5*inch,
+                    height=3*inch)
+
+        elements.append(img)
+        elements.append(Spacer(1,20))
+
+    # Therapy table
+    if "therapy_table" in st.session_state:
+
+        elements.append(Paragraph(
+            "Therapy Recommendations",
+            styles['Heading2']
+        ))
+
+        data = st.session_state.therapy_table
+
+        table_data = [data.columns.tolist()] + data.values.tolist()
+
+        table = Table(table_data)
+
+        elements.append(table)
+
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    doc.build(elements)
+
+    buffer.seek(0)
+
+    return buffer
+
+
+
+
+# -------------------------------
+# EXPORT REPORT
+# -------------------------------
+
+if page == "Export Report":
+
+    st.header("Export Oncology Analysis Report")
+
+    if st.button("Generate PDF Report"):
+
+        pdf = generate_pdf_report()
+
+        st.download_button(
+            label="Download PDF",
+            data=pdf,
+            file_name="pharmatab_report.pdf",
+            mime="application/pdf"
+        )
