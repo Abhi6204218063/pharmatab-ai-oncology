@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-import io
 import matplotlib.pyplot as plt
 import requests
+from io import BytesI0
 
 from ai.mutation_detector import MutationDetector
 from ai.therapy_mapper import MutationTherapyMapper
@@ -50,6 +50,7 @@ st.markdown("""
 background: radial-gradient(circle at 20% 20%, #0b132b, #000000);
 background-size: 400% 400%;
 animation: gradientMove 15s ease infinite;
+background-color: #f0f2f6;
 }
 
 @keyframes gradientMove {
@@ -59,7 +60,11 @@ animation: gradientMove 15s ease infinite;
 }
 
 h1,h2,h3{
-color:#6dd3ff;
+color:#1f2937;
+}
+            
+section[data-testid="stSidebar"] {
+            background-color: #ffffff;
 }
 
 </style>
@@ -75,10 +80,10 @@ st.caption("Precision Oncology Simulation System")
 # --------------------------------------------------------
 # Sidebar navigation
 # --------------------------------------------------------
-st.sidebar.title("PharmaTab AI")
+st.sidebar.title("PharmaTab Navigation")
 
-menu = st.sidebar.radio(
-"Navigation",
+page = st.sidebar.radio(
+"select section",
 [
 "About Platform",
 "Load Public Dataset",
@@ -114,7 +119,7 @@ if "trials" not in st.session_state:
 # HOME
 # --------------------------------------------------------
 
-if menu=="Home":
+if page=="Home":
 
     st.header("Precision Oncology Research Platform")
 
@@ -134,7 +139,7 @@ if menu=="Home":
 # DATASET LOADER
 # -------------------------------
 
-if menu == "Load Public Dataset":
+if page == "Load Public Dataset":
 
     st.header("Load Cancer Mutation Dataset")
 
@@ -235,7 +240,7 @@ if menu == "Load Public Dataset":
 # UPLOAD DATA
 # --------------------------------------------------------
 
-if menu=="Upload Patient Data":
+if page=="Upload Patient Data":
 
     st.header("Upload Mutation Dataset")
 
@@ -271,7 +276,7 @@ if uploaded_file is not None:
         st.write(e)
 
 
-    if menu == "Mutation Explorer":
+    if page == "Mutation Explorer":
 
         st.header("Mutation Explorer")
 
@@ -303,7 +308,7 @@ if uploaded_file is not None:
 # MUTATION ANALYSIS
 # --------------------------------------------------------
 
-if menu=="Mutation Analysis":
+if page=="Mutation Analysis":
 
     if st.session_state.dataset is None:
 
@@ -340,7 +345,7 @@ if menu=="Mutation Analysis":
         if fig:
             st.pyplot(fig)    
 
-    if menu=="Clinical Trials":
+    if page=="Clinical Trials":
 
         st.header("Clinical Trial Finder")
 
@@ -358,7 +363,7 @@ if menu=="Mutation Analysis":
 # MUTATION HEATMAP + GENE NETWORK
 # ----------------------------
 
-if menu == "Mutation Heatmap":
+if page == "Mutation Heatmap":
 
     st.header("Genomic Mutation Analysis")
 
@@ -397,7 +402,7 @@ if menu == "Mutation Heatmap":
 # THERAPY RECOMMENDATION
 # -----------------------------
 
-if menu == "Therapy Recommendation":
+if page == "Therapy Recommendation":
 
     st.header("AI Therapy Recommendation")
 
@@ -439,7 +444,7 @@ if menu == "Therapy Recommendation":
 # TUMOR SIMULATION
 # --------------------------------------------------------
 
-if menu=="Tumor Simulation":
+if page=="Tumor Simulation":
 
     if st.session_state.therapy is None:
 
@@ -460,7 +465,7 @@ if menu=="Tumor Simulation":
         ax.set_title("Tumor Evolution Simulation")
         st.pyplot(fig)
 
-        tumor_buffer = io.BytesI0()
+        tumor_buffer = BytesI0()
         fig.savefig(tumor_buffer, format="png")
         tumor_buffer.seek(0)
         st.session_state.tumor_plot = tumor_buffer
@@ -489,7 +494,7 @@ if menu=="Tumor Simulation":
 # SURVIVAL ANALYSIS
 # --------------------------------------------------------
 
-if menu=="Survival Analysis":
+if page=="Survival Analysis":
 
     if st.session_state.dataset is None:
 
@@ -516,7 +521,7 @@ if menu=="Survival Analysis":
         fig = cohort.simulate()
         st.pyplot(fig)
 
-if menu == "Survival Analysis":
+if page == "Survival Analysis":
 
     st.header("Survival Analysis")
 
@@ -530,7 +535,7 @@ if menu == "Survival Analysis":
 # SURVIVAL PREDICTION
 # -------------------------------------------------------
 
-if menu=="Survival Prediction":
+if page=="Survival Prediction":
 
     st.header("Survival Prediction")
 
@@ -559,7 +564,7 @@ if menu=="Survival Prediction":
 # CLINICAL TRIALS
 # --------------------------------------------------------
 
-if menu=="Clinical Trials":
+if page=="Clinical Trials":
 
     st.header("Clinical Trial Finder")
 
@@ -579,7 +584,7 @@ if menu=="Clinical Trials":
 # CLINICAL REPORT
 # --------------------------------------------------------
 
-if menu == "Clinical Report":
+if page == "Clinical Report":
 
     st.header("Clinical Oncology Report")
 
@@ -613,7 +618,7 @@ if menu == "Clinical Report":
 # ABOUT
 # --------------------------------------------------------
 
-if menu=="About Platform":
+if page == "About Platform":
 
     st.title("PharmaTab AI Oncology Platform")
 
@@ -657,7 +662,7 @@ supporting translational cancer research workflows.
 
 """)
     
-if menu=="Clinical Report":
+if page=="Clinical Report":
 
     st.header("Clinical Oncology Report")
 
