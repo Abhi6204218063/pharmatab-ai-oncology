@@ -50,7 +50,7 @@ st.markdown("""
 background: radial-gradient(circle at 20% 20%, #0b132b, #000000);
 background-size: 400% 400%;
 animation: gradientMove 15s ease infinite;
-background-color: #f0f2f6;
+background-color: #f5f7fb;
 }
 
 @keyframes gradientMove {
@@ -83,20 +83,20 @@ st.caption("Precision Oncology Simulation System")
 st.sidebar.title("PharmaTab Navigation")
 
 page = st.sidebar.radio(
-"select section",
-[
-"About Platform",
-"Load Public Dataset",
-"Upload Patient Data",
-"Mutation Explorer",
-"Mutation Heatmap",
-"Gene Drug Network",
-"Therapy Recommendation",
-"Survival Prediction",
-"Clinical Trials",
-"Survival Analysis",
-"Clinical Report"
-]
+    "Navigation",
+    [
+        "About Platform",
+        "Load Public Dataset",
+        "Upload Patient Data",
+        "Mutation Explorer",
+        "Mutation Heatmap",
+        "Gene Drug Network",
+        "Therapy Recommendation",
+        "Survival Prediction",
+        "Clinical Trials",
+        "Survival Analysis",
+        "Clinical Report"
+    ]
 )
 
 # --------------------------------------------------------
@@ -511,7 +511,7 @@ if page=="Survival Analysis":
         st.session_state.dataset
         )
         st.pyplot(fig)
-        survival_buffer = io.BytesI0()
+        survival_buffer = BytesIO()
         fig.savefig(survival_buffer, format="png")
         survival_buffer.seek(0)
 
