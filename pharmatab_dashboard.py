@@ -168,7 +168,8 @@ page = st.sidebar.radio(
         "Load Public Dataset",
         "Upload Patient Data",
         "Mutation Explorer",
-        "Mutation Heatmap + Drug Gene Network",
+        "Mutation Heatmap,"
+        "Drug Gene Network",
         "Therapy Recommendation",
         "Survival Prediction",
         "Clinical Trials",
