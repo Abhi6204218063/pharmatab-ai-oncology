@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import requests
-from io import BytesI0
+from io import BytesIO
 
 from ai.mutation_detector import MutationDetector
 from ai.therapy_mapper import MutationTherapyMapper
@@ -465,7 +465,7 @@ if page=="Tumor Simulation":
         ax.set_title("Tumor Evolution Simulation")
         st.pyplot(fig)
 
-        tumor_buffer = BytesI0()
+        tumor_buffer = BytesIO()
         fig.savefig(tumor_buffer, format="png")
         tumor_buffer.seek(0)
         st.session_state.tumor_plot = tumor_buffer
