@@ -85,8 +85,8 @@ def build_gene_drug_network(mutations):
             drug = gene_network_data[gene]["drug"]
             pathway = gene_network_data[gene]["pathway"]
 
-            G.add_node(gene, type="gene")
-            G.add_node(drug, type="drug")
+            G.add_node(gene)
+            G.add_node(drug)
             G.add_node(pathway, type="pathway")
 
             G.add_edge(gene, drug)
@@ -100,10 +100,17 @@ def build_gene_drug_network(mutations):
             G,
             pos,
             with_labels=True,
+            node_size=3000,
             node_color="lightblue",
-            node_size=2000
+            font_size=10,
+            ax=ax
         )       
         st.pyplot(fig)
+
+        network_buffer = BytesIO()
+        fig.savefig(network_buffer, format="png")
+        network_buffer.seek(0)
+        st.session_state.network_plot = network_buffer
 
 # --------------------------------------------------------
 # Page config
@@ -122,10 +129,9 @@ st.markdown("""
 <style>
 
 .stApp {
-background: radial-gradient(circle at 20% 20%, #0b132b, #000000);
+background: radial-gradient(circle at 20% 20%, #0b132b, #1c2541, #3a506b);
 background-size: 400% 400%;
 animation: gradientMove 15s ease infinite;
-background-color: #f5f7fb;
 }
 
 @keyframes gradientMove {
@@ -164,8 +170,7 @@ page = st.sidebar.radio(
         "Load Public Dataset",
         "Upload Patient Data",
         "Mutation Explorer",
-        "Mutation Heatmap",
-        "Gene Drug Network",
+        "Mutation Heatmap + Drug Gene Network",
         "Therapy Recommendation",
         "Survival Prediction",
         "Clinical Trials",
@@ -174,6 +179,54 @@ page = st.sidebar.radio(
         "Export Report"
     ]
 )
+
+# --------------------------------------------------------
+# ABOUT
+# --------------------------------------------------------
+
+if page == "About Platform":
+
+    st.title("PharmaTab AI Oncology Platform")
+
+    st.markdown("""
+### Precision Oncology Simulation Platform
+
+PharmaTab is an AI-assisted computational oncology platform designed to help researchers
+and clinicians analyze cancer genomic mutations and translate them into therapeutic insights.
+
+The system integrates multiple modules used in modern precision oncology pipelines.
+
+### Core Capabilities
+
+**1️⃣ Genomic Mutation Analysis**
+
+Analyze tumor mutation datasets from TCGA and other public repositories.
+Identify frequently mutated genes and visualize mutation patterns.
+
+**2️⃣ Therapy Recommendation Engine**
+
+Map detected mutations to known targeted therapies using curated drug-gene relationships.
+
+**3️⃣ Clinical Trial Discovery**
+
+Automatically search ClinicalTrials.gov to identify ongoing trials relevant to a patient’s
+cancer type or molecular profile.
+
+**4️⃣ Survival Prediction Modeling**
+
+Machine learning models estimate survival probabilities based on clinical variables.
+
+**5️⃣ Automated Clinical Reporting**
+
+Generate structured oncology reports summarizing mutations, potential therapies,
+and relevant clinical trials.
+
+### Intended Use
+
+PharmaTab is designed for **research and hypothesis generation** in computational oncology,
+supporting translational cancer research workflows.
+
+""")
 
 # --------------------------------------------------------
 # session state
@@ -698,54 +751,6 @@ if page == "Clinical Report":
         Targeted therapies and ongoing clinical trials should be evaluated
         to determine optimal treatment strategies.
         """)
-
-# --------------------------------------------------------
-# ABOUT
-# --------------------------------------------------------
-
-if page == "About Platform":
-
-    st.title("PharmaTab AI Oncology Platform")
-
-    st.markdown("""
-### Precision Oncology Simulation Platform
-
-PharmaTab is an AI-assisted computational oncology platform designed to help researchers
-and clinicians analyze cancer genomic mutations and translate them into therapeutic insights.
-
-The system integrates multiple modules used in modern precision oncology pipelines.
-
-### Core Capabilities
-
-**1️⃣ Genomic Mutation Analysis**
-
-Analyze tumor mutation datasets from TCGA and other public repositories.
-Identify frequently mutated genes and visualize mutation patterns.
-
-**2️⃣ Therapy Recommendation Engine**
-
-Map detected mutations to known targeted therapies using curated drug-gene relationships.
-
-**3️⃣ Clinical Trial Discovery**
-
-Automatically search ClinicalTrials.gov to identify ongoing trials relevant to a patient’s
-cancer type or molecular profile.
-
-**4️⃣ Survival Prediction Modeling**
-
-Machine learning models estimate survival probabilities based on clinical variables.
-
-**5️⃣ Automated Clinical Reporting**
-
-Generate structured oncology reports summarizing mutations, potential therapies,
-and relevant clinical trials.
-
-### Intended Use
-
-PharmaTab is designed for **research and hypothesis generation** in computational oncology,
-supporting translational cancer research workflows.
-
-""")
 
 # -----------------------------------
 # PDF REPORT GENERATOR
