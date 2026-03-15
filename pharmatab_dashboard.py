@@ -507,12 +507,12 @@ if page=="Survival Analysis":
 
         km=KaplanMeierSurvival()
 
-        fig=km.run_analysis(
+        km_fig=km.run_analysis(
         st.session_state.dataset
         )
-        st.pyplot(fig)
+        st.pyplot(km_fig)
         survival_buffer = BytesIO()
-        fig.savefig(survival_buffer, format="png")
+        km_fig.savefig(survival_buffer, format="png")
         survival_buffer.seek(0)
 
         st.session_state.survival_plot = survival_buffer
